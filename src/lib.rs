@@ -24,9 +24,11 @@
 //! In your code, run the following:
 //!
 //! ```no_run
+//!
+//! use libloading::os::unix::RTLD_NOW;
 //! fn call_dynamic() -> Result<u32, Box<dyn std::error::Error>> {
 //!     unsafe {
-//!         let lib = libloading::Library::new("/path/to/liblibrary.so")?;
+//!         let lib = libloading::Library::new("/path/to/liblibrary.so", RTLD_NOW)?;
 //!         let func: libloading::Symbol<unsafe extern fn() -> u32> = lib.get(b"my_func")?;
 //!         Ok(func())
 //!     }
@@ -62,10 +64,11 @@ use std::ffi::{OsStr, OsString};
 ///
 /// ```
 /// use libloading::{Library, library_filename};
+/// use libloading::os::unix::RTLD_NOW;
 /// // Will attempt to load `libLLVM.so` on Linux, `libLLVM.dylib` on macOS and `LLVM.dll` on
 /// // Windows.
 /// let library = unsafe {
-///     Library::new(library_filename("LLVM"))
+///     Library::new(library_filename("LLVM"),RTLD_NOW)
 /// };
 /// ```
 pub fn library_filename<S: AsRef<OsStr>>(name: S) -> OsString {

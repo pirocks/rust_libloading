@@ -13,6 +13,7 @@ use std::ffi::{CStr, OsStr};
 use std::os::raw;
 use std::{fmt, marker, mem, ptr};
 use util::{cstr_cow_from_bytes, ensure_compatible_types};
+use std::os::raw::c_int;
 
 mod consts;
 
@@ -131,8 +132,8 @@ impl Library {
     /// termination routines contained within the library is safe as well. These routines may be
     /// executed when the library is unloaded.
     #[inline]
-    pub unsafe fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
-        Library::open(Some(filename), RTLD_LAZY | RTLD_LOCAL)
+    pub unsafe fn new<P: AsRef<OsStr>>(filename: P, flags: c_int) -> Result<Library, crate::Error> {
+        Library::open(Some(filename), flags)
     }
 
     /// Load the `Library` representing the current executable.

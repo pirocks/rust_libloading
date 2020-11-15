@@ -9,6 +9,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::marker;
 use std::ops;
+use std::os::raw::c_int;
 
 /// A loaded dynamic library.
 #[cfg_attr(libloading_docs, doc(cfg(any(unix, windows))))]
@@ -73,15 +74,16 @@ impl Library {
     ///
     /// ```no_run
     /// # use ::libloading::Library;
+    /// use libloading::os::unix::RTLD_LAZY;
     /// // Any of the following are valid.
     /// unsafe {
-    ///     let _ = Library::new("/path/to/awesome.module").unwrap();
-    ///     let _ = Library::new("../awesome.module").unwrap();
-    ///     let _ = Library::new("libsomelib.so.1").unwrap();
+    ///     let _ = Library::new("/path/to/awesome.module", RTLD_LAZY).unwrap();
+    ///     let _ = Library::new("../awesome.module", RTLD_LAZY).unwrap();
+    ///     let _ = Library::new("libsomelib.so.1", RTLD_LAZY).unwrap();
     /// }
     /// ```
-    pub unsafe fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, Error> {
-        imp::Library::new(filename).map(From::from)
+    pub unsafe fn new<P: AsRef<OsStr>>(filename: P, flags: c_int) -> Result<Library, Error> {
+        imp::Library::new(filename, flags).map(From::from)
     }
 
     /// Get a pointer to a function or static variable by symbol name.
@@ -115,8 +117,9 @@ impl Library {
     ///
     /// ```no_run
     /// # use ::libloading::Library;
+    /// use libloading::os::unix::RTLD_NOW;
     /// let lib = unsafe {
-    ///     Library::new("/path/to/awesome.module").unwrap()
+    ///     Library::new("/path/to/awesome.module", RTLD_NOW).unwrap()
     /// };
     /// ```
     ///
@@ -124,8 +127,9 @@ impl Library {
     ///
     /// ```no_run
     /// # use ::libloading::{Library, Symbol};
+    /// use libloading::os::unix::RTLD_NOW;
     /// # let lib = unsafe {
-    /// #     Library::new("/path/to/awesome.module").unwrap()
+    /// #     Library::new("/path/to/awesome.module", RTLD_NOW).unwrap()
     /// # };
     /// unsafe {
     ///     let awesome_function: Symbol<unsafe extern fn(f64) -> f64> =
@@ -138,13 +142,14 @@ impl Library {
     ///
     /// ```no_run
     /// # use ::libloading::{Library, Symbol};
-    /// # let lib = unsafe { Library::new("/path/to/awesome.module").unwrap() };
+    /// use libloading::os::unix::RTLD_NOW;
+    /// # let lib = unsafe { Library::new("/path/to/awesome.module", RTLD_NOW).unwrap() };
     /// unsafe {
     ///     let awesome_variable: Symbol<*mut f64> = lib.get(b"awesome_variable\0").unwrap();
     ///     **awesome_variable = 42.0;
     /// };
     /// ```
-    pub unsafe fn get<'lib, T>(&'lib self, symbol: &[u8]) -> Result<Symbol<'lib, T>, Error> {
+    pub unsafe fn get<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, Error> {
         self.0.get(symbol).map(|from| Symbol::from_raw(from, self))
     }
 
@@ -212,8 +217,9 @@ impl<'lib, T> Symbol<'lib, T> {
     ///
     /// ```no_run
     /// # use ::libloading::{Library, Symbol};
+    /// use libloading::os::unix::RTLD_LAZY;
     /// unsafe {
-    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+    ///     let lib = Library::new("/path/to/awesome.module", RTLD_LAZY).unwrap();
     ///     let symbol: Symbol<*mut u32> = lib.get(b"symbol\0").unwrap();
     ///     let symbol = symbol.into_raw();
     /// }
@@ -235,8 +241,9 @@ impl<'lib, T> Symbol<'lib, T> {
     ///
     /// ```no_run
     /// # use ::libloading::{Library, Symbol};
+    /// use libloading::os::unix::RTLD_NOW;
     /// unsafe {
-    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+    ///     let lib = Library::new("/path/to/awesome.module", RTLD_NOW).unwrap();
     ///     let symbol: Symbol<*mut u32> = lib.get(b"symbol\0").unwrap();
     ///     let symbol = symbol.into_raw();
     ///     let symbol = Symbol::from_raw(symbol, &lib);
@@ -258,8 +265,9 @@ impl<'lib, T> Symbol<'lib, Option<T>> {
     ///
     /// ```no_run
     /// # use ::libloading::{Library, Symbol};
+    /// use libloading::os::unix::RTLD_NOW;
     /// unsafe {
-    ///     let lib = Library::new("/path/to/awesome.module").unwrap();
+    ///     let lib = Library::new("/path/to/awesome.module", RTLD_NOW).unwrap();
     ///     let symbol: Symbol<Option<*mut u32>> = lib.get(b"symbol\0").unwrap();
     ///     let symbol: Symbol<*mut u32> = symbol.lift_option().expect("static is not null");
     /// }
