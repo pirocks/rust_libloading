@@ -14,6 +14,7 @@ use std::ffi::{CStr, OsStr};
 use std::{fmt, marker, mem, ptr};
 use std::os::raw;
 pub use self::consts::*;
+use std::os::raw::c_int;
 
 mod consts;
 
@@ -107,8 +108,8 @@ impl Library {
     ///
     /// [path separator]: std::path::MAIN_SEPARATOR
     #[inline]
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
-        Library::open(Some(filename), RTLD_NOW)
+    pub fn new<P: AsRef<OsStr>>(filename: P, flags: c_int) -> Result<Library, crate::Error> {
+        Library::open(Some(filename), flags)
     }
 
     /// Eagerly load the `Library` representing the current executable.

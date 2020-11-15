@@ -3,6 +3,7 @@ extern crate winapi;
 
 extern crate libloading;
 use libloading::{Symbol, Library};
+use libloading::os::unix::RTLD_NOW;
 
 const LIBPATH: &'static str = "target/libtest_helpers.module";
 
@@ -31,7 +32,7 @@ fn make_helpers() {
 #[test]
 fn test_id_u32() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         let f: Symbol<unsafe extern fn(u32) -> u32> = lib.get(b"test_identity_u32\0").unwrap();
         assert_eq!(42, f(42));
@@ -50,7 +51,7 @@ struct S {
 #[test]
 fn test_id_struct() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         let f: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct\0").unwrap();
         assert_eq!(S { a: 1, b: 2, c: 3, d: 4 }, f(S { a: 1, b: 2, c: 3, d: 4 }));
@@ -60,7 +61,7 @@ fn test_id_struct() {
 #[test]
 fn test_0_no_0() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         let f: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct\0").unwrap();
         let f2: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct").unwrap();
@@ -70,13 +71,13 @@ fn test_0_no_0() {
 
 #[test]
 fn wrong_name_fails() {
-    Library::new("target/this_location_is_definitely_non existent:^~").err().unwrap();
+    Library::new("target/this_location_is_definitely_non existent:^~",RTLD_NOW).err().unwrap();
 }
 
 #[test]
 fn missing_symbol_fails() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         lib.get::<*mut ()>(b"test_does_not_exist").err().unwrap();
         lib.get::<*mut ()>(b"test_does_not_exist\0").err().unwrap();
@@ -86,7 +87,7 @@ fn missing_symbol_fails() {
 #[test]
 fn interior_null_fails() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         lib.get::<*mut ()>(b"test_does\0_not_exist").err().unwrap();
         lib.get::<*mut ()>(b"test\0_does_not_exist\0").err().unwrap();
@@ -96,7 +97,7 @@ fn interior_null_fails() {
 #[test]
 fn test_incompatible_type() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         assert!(match lib.get::<()>(b"test_identity_u32\0") {
            Err(libloading::Error::IncompatibleSize) => true,
@@ -111,7 +112,7 @@ fn test_incompatible_type_named_fn() {
     unsafe fn get<'a, T>(l: &'a Library, _: T) -> Result<Symbol<'a, T>, libloading::Error> {
         l.get::<T>(b"test_identity_u32\0")
     }
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         assert!(match get(&lib, test_incompatible_type_named_fn) {
            Err(libloading::Error::IncompatibleSize) => true,
@@ -123,7 +124,7 @@ fn test_incompatible_type_named_fn() {
 #[test]
 fn test_static_u32() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH,RTLD_NOW).unwrap();
     unsafe {
         let var: Symbol<*mut u32> = lib.get(b"TEST_STATIC_U32\0").unwrap();
         **var = 42;
@@ -135,7 +136,7 @@ fn test_static_u32() {
 #[test]
 fn test_static_ptr() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
+    let lib = Library::new(LIBPATH, RTLD_NOW).unwrap();
     unsafe {
         let var: Symbol<*mut *mut ()> = lib.get(b"TEST_STATIC_PTR\0").unwrap();
         **var = *var as *mut _;
@@ -150,7 +151,7 @@ fn test_static_ptr() {
 fn library_this_get() {
     use libloading::os::unix::Library;
     make_helpers();
-    let _lib = Library::new(LIBPATH).unwrap();
+    let _lib = Library::new(LIBPATH, RTLD_NOW).unwrap();
     let this = Library::this();
     // SAFE: functions are never called
     unsafe {
